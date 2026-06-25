@@ -21,7 +21,7 @@ export function useAppState() {
 
   // View + layers
   const [view, setView] = useState('2D'); // '2D' | '3D'
-  const [layers, setLayers] = useState({ shadows: false, windRose: true, sunDiagram: true });
+  const [layers, setLayers] = useState({ shadows: false, windRose: true, sunDiagram: true, facadeGuide: false });
 
   // Selection + analysis
   const [selected, setSelected] = useState(null); // building feature
@@ -45,15 +45,8 @@ export function useAppState() {
   }, [drawingMode, drawingPoints]);
 
   const addDrawingPoint = useCallback((lngLat) => {
-    setDrawingPoints((prev) => {
-      const next = [...prev, lngLat];
-      if (next.length >= targetPoints) {
-        // Auto-close once target count reached
-        setDrawingMode(false);
-      }
-      return next;
-    });
-  }, [targetPoints]);
+    setDrawingPoints((prev) => [...prev, lngLat]);
+  }, []);
 
   const undoLastPoint = useCallback(() => {
     setDrawingPoints((prev) => prev.slice(0, -1));

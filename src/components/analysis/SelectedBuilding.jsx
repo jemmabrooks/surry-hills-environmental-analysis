@@ -130,7 +130,7 @@ function ShadowReportButton({ building, posPolygon, disabled }) {
   );
 }
 
-export function SelectedBuilding({ building, buildings, wind, windRose, analysisTab, setAnalysisTab, posState }) {
+export function SelectedBuilding({ building, buildings, wind, windRose, analysisTab, setAnalysisTab, posState, proposedBuilding }) {
   if (!building) {
     return (
       <div>
@@ -171,7 +171,7 @@ export function SelectedBuilding({ building, buildings, wind, windRose, analysis
       </div>
 
       <div className="mt-md">
-        <ReportButton building={building} buildings={buildings} wind={wind} />
+        <ReportButton building={building} buildings={buildings} wind={wind} proposedBuilding={proposedBuilding} />
       </div>
 
       {posState && (

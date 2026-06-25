@@ -13,14 +13,16 @@ import { SunPath2DLayer } from './layers/SunPath2DLayer';
 import { ProposedBuildingLayer } from './layers/ProposedBuildingLayer';
 import { DrawingPreviewLayer } from './layers/DrawingPreviewLayer';
 import { PosLayer } from './layers/PosLayer';
+import { FacadeGuideLayer } from './layers/FacadeGuideLayer';
 import { centroidOf } from '../lib/geometry';
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-const INTERACTIVE = ['buildings-fill', 'buildings-3d'];
+const INTERACTIVE = ['buildings-fill', 'buildings-3d', 'proposed-building-fill', 'proposed-building-3d'];
 
 export function MapView({
   buildings,
-  shadows,
+  existingShadows,
+  proposedShadows,
   shadowsEnabled,
   windRoseEnabled,
   sunDiagramEnabled,
@@ -47,6 +49,8 @@ export function MapView({
   posDrawingPreview,
   onAddPosPoint,
   onFinishPosDrawing,
+  facadeGuideEnabled,
+  wind,
 }) {
   const mapRef = useRef(null);
 
@@ -63,11 +67,15 @@ export function MapView({
       const feat = e.features?.[0];
       if (feat) {
         const id = feat.properties?.id ?? feat.id;
+        if (id === '__proposed__') {
+          if (proposedBuilding) onSelectBuilding(proposedBuilding);
+          return;
+        }
         const full = buildings?.features.find((b) => String(b.properties.id) === String(id));
         if (full) onSelectBuilding(full);
       }
     },
-    [buildings, onSelectBuilding, drawingMode, posDrawingMode, onAddDrawingPoint, onAddPosPoint],
+    [buildings, onSelectBuilding, drawingMode, posDrawingMode, onAddDrawingPoint, onAddPosPoint, proposedBuilding],
   );
 
   const handleDblClick = useCallback(
@@ -111,7 +119,16 @@ export function MapView({
         style={{ width: '100%', height: '100%', cursor: (drawingMode || posDrawingMode) ? 'crosshair' : 'default' }}
       >
         <BoundaryLayer />
-        {shadowsEnabled && <ShadowsLayer data={shadows} />}
+        {/* Shadows before buildings in JSX = added to map first = visually beneath buildings.
+            No beforeId needed — JSX order controls stacking. Proposed beneath existing. */}
+        <ShadowsLayer
+          data={proposedShadows}
+          view={view}
+          sourceId="proposed-shadows"
+          color="#f59e0b"
+          opacity={0.85}
+        />
+        <ShadowsLayer data={existingShadows} view={view} />
         <BuildingsLayer data={buildings} view={view} selectedId={selectedId} />
         {windRoseEnabled && selectedBuilding && allWindRose && view === '3D' && (
           <WindArrows3DLayer
@@ -130,6 +147,9 @@ export function MapView({
         <DrawingPreviewLayer points={drawingPreview} />
         <DrawingPreviewLayer points={posDrawingPreview} color="#16a34a" sourceId="pos-preview" />
         <PosLayer posPolygon={posPolygon} />
+        {facadeGuideEnabled && selectedBuilding && (
+          <FacadeGuideLayer building={selectedBuilding} wind={wind} />
+        )}
         <ProposedBuildingLayer building={proposedBuilding} view={view} />
         {analysisOverlay && (
           <AnalysisOverlay points={analysisOverlay.points} lines={analysisOverlay.lines} />

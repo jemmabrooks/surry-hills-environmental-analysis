@@ -30,6 +30,7 @@ export function LayerToggles({ layers, toggleLayer }) {
       <Toggle label="Shadows" checked={layers.shadows} onChange={() => toggleLayer('shadows')} />
       <Toggle label="Wind rose" checked={layers.windRose} onChange={() => toggleLayer('windRose')} />
       <Toggle label="Sun diagram" checked={layers.sunDiagram} onChange={() => toggleLayer('sunDiagram')} />
+      <Toggle label="Facade guide" checked={layers.facadeGuide} onChange={() => toggleLayer('facadeGuide')} />
     </div>
   );
 }

@@ -51,14 +51,18 @@ export default function App() {
     [state.year, state.month, state.day, debouncedHour],
   );
 
-  const shadows = useMemo(() => {
+  const existingShadows = useMemo(() => {
     if (!state.layers.shadows || !buildings) return null;
-    // Merge proposed building into shadow computation if it exists
-    const allBuildings = state.proposedBuilding
-      ? { ...buildings, features: [...buildings.features, state.proposedBuilding] }
-      : buildings;
-    return buildShadowPolygons(allBuildings, sun);
-  }, [state.layers.shadows, buildings, sun, state.proposedBuilding]);
+    return buildShadowPolygons(buildings, sun);
+  }, [state.layers.shadows, buildings, sun]);
+
+  const proposedShadows = useMemo(() => {
+    if (!state.layers.shadows || !state.proposedBuilding) return null;
+    return buildShadowPolygons(
+      { type: 'FeatureCollection', features: [state.proposedBuilding] },
+      sun,
+    );
+  }, [state.layers.shadows, sun, state.proposedBuilding]);
 
   // Per-building analysis overlay (points + flow lines) for the selected tab.
   const analysisOverlay = useMemo(() => {
@@ -101,7 +105,8 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden font-sans">
       <MapView
         buildings={buildings}
-        shadows={shadows}
+        existingShadows={existingShadows}
+        proposedShadows={proposedShadows}
         shadowsEnabled={state.layers.shadows}
         windRoseEnabled={state.layers.windRose}
         sunDiagramEnabled={state.layers.sunDiagram}
@@ -128,6 +133,8 @@ export default function App() {
         posDrawingPreview={state.posDrawingPreview}
         onAddPosPoint={state.addPosPoint}
         onFinishPosDrawing={state.finishPosDrawing}
+        facadeGuideEnabled={state.layers.facadeGuide}
+        wind={wind}
       />
 
       {state.selected && (
@@ -143,7 +150,9 @@ export default function App() {
         setOpen={setOpen}
         state={state}
         buildings={buildings}
+        wind={wind}
         windRose={windRose}
+        proposedBuilding={state.proposedBuilding}
         onSearchResult={onSearchResult}
       />
 

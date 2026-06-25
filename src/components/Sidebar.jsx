@@ -27,14 +27,11 @@ function Slider({ label, value, min, max, step, unit, onChange, accent = 'accent
   );
 }
 
-const POINT_OPTIONS = [3, 4, 5, 6, 7, 8];
-
 function ProposedBuildingPanel({ state }) {
   const {
     proposedBuilding, drawingPoints, drawingMode, setDrawingMode,
-    targetPoints, setTargetPoints,
     proposedHeight, setProposedHeight,
-    addDrawingPoint, undoLastPoint, finishDrawing, clearProposed,
+    undoLastPoint, finishDrawing, clearProposed,
     layers, toggleLayer,
   } = state;
 
@@ -44,28 +41,6 @@ function ProposedBuildingPanel({ state }) {
   return (
     <div>
       <div className="type-caption mb-sm text-ink/50">PROPOSED BUILDING</div>
-
-      {/* Point count selector — always visible when not actively drawing a placed shape */}
-      {!hasPoints && (
-        <div className="mb-sm">
-          <div className="type-caption text-ink/50 mb-xs">Number of points</div>
-          <div className="flex gap-xs flex-wrap">
-            {POINT_OPTIONS.map((n) => (
-              <button
-                key={n}
-                onClick={() => setTargetPoints(n)}
-                className={`rounded-md px-sm py-xs type-body-sm border transition-colors ${
-                  targetPoints === n
-                    ? 'bg-red-500 text-white border-red-500'
-                    : 'border-hairline text-ink/60 hover:border-red-400 hover:text-red-500'
-                }`}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Idle — nothing drawn yet */}
       {!hasPoints && !drawingMode && (
@@ -84,8 +59,8 @@ function ProposedBuildingPanel({ state }) {
             <p className="type-body-sm text-red-600 font-medium">Click map to add points</p>
             <p className="type-caption text-red-400 mt-xxs">
               {drawingPoints.length === 0
-                ? `Place your first of ${targetPoints} points`
-                : `${drawingPoints.length} / ${targetPoints} points placed`}
+                ? 'Click to place your first point'
+                : `${drawingPoints.length} point${drawingPoints.length === 1 ? '' : 's'} placed — double-click or close to finish`}
             </p>
           </div>
           <div className="flex gap-xs">
@@ -160,7 +135,7 @@ function WindRoseMonthPanel({ state }) {
   );
 }
 
-export function Sidebar({ open, setOpen, state, buildings, wind, windRose, onSearchResult }) {
+export function Sidebar({ open, setOpen, state, buildings, wind, windRose, proposedBuilding, onSearchResult }) {
   return (
     <>
       <button
@@ -204,6 +179,7 @@ export function Sidebar({ open, setOpen, state, buildings, wind, windRose, onSea
             analysisTab={state.analysisTab}
             setAnalysisTab={state.setAnalysisTab}
             posState={state.selected ? state : null}
+            proposedBuilding={proposedBuilding}
           />
         </div>
       </aside>
