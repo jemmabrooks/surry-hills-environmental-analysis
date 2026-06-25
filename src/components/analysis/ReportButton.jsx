@@ -45,7 +45,7 @@ function computeShadowComparison(buildings, proposedBuilding) {
   return rows;
 }
 
-export function ReportButton({ building, buildings, wind, proposedBuilding }) {
+export function ReportButton({ building, buildings, wind, proposedBuilding, posPolygon }) {
   const download = () => {
     const analyses = {
       solar: scoreRoofZones(building, buildings),
@@ -58,6 +58,7 @@ export function ReportButton({ building, buildings, wind, proposedBuilding }) {
         : null,
       hasProposed: !!proposedBuilding,
       proposedBuilding,
+      posFeature: posPolygon ?? null,
     };
     generatePdf(building, analyses);
   };

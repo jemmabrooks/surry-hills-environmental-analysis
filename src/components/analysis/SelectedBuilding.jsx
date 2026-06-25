@@ -1,27 +1,21 @@
-import { useState } from 'react';
 import { Eyebrow } from '../ui/Card';
-import { PillToggle } from '../ui/Button';
 import { footprintArea, storeysOf } from '../../lib/geometry';
-import { SolarPanel } from './SolarPanel';
-import { VentilationPanel } from './VentilationPanel';
-import { GlazingPanel } from './GlazingPanel';
 import { ReportButton } from './ReportButton';
-import { generateShadowReport } from '../../lib/shadowPdf';
 
 const POS_POINT_OPTIONS = [3, 4, 5, 6];
 
 function PosDrawingPanel({ state }) {
   const {
-    posPolygon, posPoints, posDrawingMode, setPosDrawingMode,
+    posPoints, posDrawingMode, setPosDrawingMode,
     posTargetPoints, setPosTargetPoints,
     undoLastPosPoint, finishPosDrawing, clearPos,
   } = state;
 
   const hasPoints = posPoints.length > 0;
-  const canClose  = posPoints.length >= 3;
+  const canClose = posPoints.length >= 3;
 
   return (
-    <div>
+    <div className="mt-md pt-md border-t border-hairline">
       <div className="flex items-center gap-xs mb-xs">
         <span className="inline-block w-2 h-2 rounded-sm bg-green-600 flex-shrink-0" />
         <span className="type-caption text-ink/50">PRINCIPAL PRIVATE OPEN SPACE (POS)</span>
@@ -30,7 +24,6 @@ function PosDrawingPanel({ state }) {
         Draw the adjacent open space polygon to enable BCA compliance testing in the shadow report.
       </p>
 
-      {/* Point count — only when nothing drawn yet */}
       {!hasPoints && (
         <div className="mb-sm">
           <div className="type-caption text-ink/40 mb-xs">Points</div>
@@ -52,7 +45,6 @@ function PosDrawingPanel({ state }) {
         </div>
       )}
 
-      {/* Idle */}
       {!hasPoints && !posDrawingMode && (
         <button
           onClick={() => setPosDrawingMode(true)}
@@ -62,7 +54,6 @@ function PosDrawingPanel({ state }) {
         </button>
       )}
 
-      {/* Active */}
       {posDrawingMode && (
         <div className="space-y-xs">
           <div className="rounded-md bg-green-50 border border-green-200 px-md py-xs">
@@ -93,7 +84,6 @@ function PosDrawingPanel({ state }) {
         </div>
       )}
 
-      {/* Drawn */}
       {hasPoints && !posDrawingMode && (
         <div className="flex items-center gap-xs">
           <span className="type-body-sm text-green-600 font-medium">POS polygon defined</span>
@@ -105,32 +95,7 @@ function PosDrawingPanel({ state }) {
   );
 }
 
-function ShadowReportButton({ building, posPolygon, disabled }) {
-  const [generating, setGenerating] = useState(false);
-
-  const handleClick = async () => {
-    setGenerating(true);
-    try {
-      // Small delay so the button state renders before the synchronous PDF work
-      await new Promise(r => setTimeout(r, 50));
-      generateShadowReport(building, posPolygon ?? null);
-    } finally {
-      setGenerating(false);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={generating}
-      className="w-full rounded-md bg-ink text-canvas py-sm type-body-sm font-medium hover:bg-ink/80 disabled:opacity-50 transition-colors flex items-center justify-center gap-xs"
-    >
-      {generating ? 'Generating…' : '↓ Shadow Analysis Report (PDF)'}
-    </button>
-  );
-}
-
-export function SelectedBuilding({ building, buildings, wind, windRose, analysisTab, setAnalysisTab, posState, proposedBuilding }) {
+export function SelectedBuilding({ building, buildings, wind, proposedBuilding, posState }) {
   if (!building) {
     return (
       <div>
@@ -152,37 +117,11 @@ export function SelectedBuilding({ building, buildings, wind, windRose, analysis
         Height ~{height} m ({storeysOf(p.height ?? 6)} storeys) · {areaM2.toLocaleString()} m²
       </p>
 
-      <div className="mt-sm">
-        <PillToggle
-          value={analysisTab ?? ''}
-          onChange={setAnalysisTab}
-          options={[
-            { value: 'solar', label: 'Solar' },
-            { value: 'ventilation', label: 'Ventilation' },
-            { value: 'glazing', label: 'Glazing' },
-          ]}
-        />
-      </div>
+      {posState && <PosDrawingPanel state={posState} />}
 
       <div className="mt-md">
-        {analysisTab === 'solar' && <SolarPanel building={building} buildings={buildings} />}
-        {analysisTab === 'ventilation' && <VentilationPanel building={building} wind={wind} windRose={windRose} />}
-        {analysisTab === 'glazing' && <GlazingPanel building={building} />}
+        <ReportButton building={building} buildings={buildings} wind={wind} proposedBuilding={proposedBuilding} posPolygon={posState?.posPolygon ?? null} />
       </div>
-
-      <div className="mt-md">
-        <ReportButton building={building} buildings={buildings} wind={wind} proposedBuilding={proposedBuilding} />
-      </div>
-
-      {posState && (
-        <div className="mt-md pt-md border-t border-hairline space-y-sm">
-          <PosDrawingPanel state={posState} />
-          <ShadowReportButton
-            building={building}
-            posPolygon={posState.posPolygon}
-          />
-        </div>
-      )}
     </div>
   );
 }

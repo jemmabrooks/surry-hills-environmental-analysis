@@ -148,7 +148,7 @@ export function MapView({
         <DrawingPreviewLayer points={posDrawingPreview} color="#16a34a" sourceId="pos-preview" />
         <PosLayer posPolygon={posPolygon} />
         {facadeGuideEnabled && selectedBuilding && (
-          <FacadeGuideLayer building={selectedBuilding} wind={wind} />
+          <FacadeGuideLayer building={selectedBuilding} wind={wind} buildings={buildings} />
         )}
         <ProposedBuildingLayer building={proposedBuilding} view={view} />
         {analysisOverlay && (
