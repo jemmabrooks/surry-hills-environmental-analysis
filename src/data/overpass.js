@@ -1,9 +1,12 @@
 // Fetch building footprints + heights from OpenStreetMap via Overpass (ADR-003).
+// Static bundled snapshot is used immediately; a background refresh updates
+// localStorage so subsequent loads get fresher data without blocking startup.
 import osmtogeojson from 'osmtogeojson';
 import { booleanIntersects } from '@turf/turf';
 import { heightOf } from '../lib/geometry';
 import { SURRY_HILLS } from '../constants';
 import { SURRY_HILLS_BOUNDARY } from './boundary';
+import STATIC_BUILDINGS from './buildings-static.json';
 
 const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
@@ -24,30 +27,45 @@ out body geom;`;
 
 // Returns a GeoJSON FeatureCollection of building polygons, each with
 // properties: { id, height, name, address }.
+// Strategy: return cached or bundled data immediately (never blocks the UI),
+// then silently refresh from Overpass in the background.
 export async function fetchBuildings({ useCache = true } = {}) {
+  // 1. Return localStorage cache instantly if available
   if (useCache) {
     const cached = readCache();
-    if (cached) return cached;
-  }
-
-  const query = buildQuery();
-  let lastError;
-  for (const endpoint of ENDPOINTS) {
-    try {
-      const res = await fetchWithTimeout(endpoint, query, 35000);
-      if (!res.ok) throw new Error(`Overpass ${res.status}`);
-      const json = await res.json();
-      const fc = normalize(json);
-      writeCache(fc);
-      return fc;
-    } catch (err) {
-      lastError = err;
+    if (cached) {
+      refreshInBackground();
+      return cached;
     }
   }
-  // Fall back to stale cache if the network failed entirely.
-  const stale = readCache();
-  if (stale) return stale;
-  throw lastError ?? new Error('Failed to fetch buildings');
+
+  // 2. No cache — return the bundled static snapshot immediately so the app
+  //    works on first load / fresh installs without waiting for the API.
+  writeCache(STATIC_BUILDINGS);
+  refreshInBackground();
+  return STATIC_BUILDINGS;
+}
+
+// Silently fetch fresh data from Overpass and update localStorage.
+// Never throws — failures are swallowed so they don't affect the UI.
+function refreshInBackground() {
+  const query = buildQuery();
+  (async () => {
+    for (const endpoint of ENDPOINTS) {
+      try {
+        const res = await fetchWithTimeout(endpoint, query, 35000);
+        if (!res.ok) continue;
+        const text = await res.text();
+        if (text.startsWith('<')) continue; // HTML error page
+        const json = JSON.parse(text);
+        const fc = normalize(json);
+        writeCache(fc);
+        return;
+      } catch {
+        // try next endpoint
+      }
+    }
+  })();
 }
 
 function normalize(osmJson) {
